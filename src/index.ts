@@ -1,23 +1,12 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { McpAgent } from 'agents/mcp'
 import { config } from 'dotenv'
-import { z } from 'zod'
 import db from './config/db'
-import Project from './models/Project'
+import createProject from './tools/createProject'
+import createTodo from './tools/createTodo'
 
 config()
 db()
-
-interface Todo {
-  id: string
-  projectId: string
-  title: string
-  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED'
-  priority: 'LOW' | 'MEDIUM' | 'HIGH'
-  description: string
-  createdAt: string
-  updatedAt: string
-}
 
 export class MyMCP extends McpAgent {
   server = new McpServer({
@@ -26,31 +15,9 @@ export class MyMCP extends McpAgent {
   })
 
   async init() {
-    this.server.registerTool(
-      'create_project',
-      {
-        title: 'Create Project',
-        description:
-          'Creates a new project with the given name and description.',
-        inputSchema: z.object({
-          name: z.string().min(1).max(100),
-          description: z.string().max(500).optional()
-        })
-      },
-      async ({ name, description }) => {
-        const project = await Project.create({
-          id: crypto.randomUUID(),
-          name,
-          description: description || '',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        })
-
-        return {
-          content: [{ type: 'text', text: JSON.stringify(project, null, 2) }]
-        }
-      }
-    )
+    // Register tools
+    createProject(this.server)
+    createTodo(this.server)
   }
 }
 
